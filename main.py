@@ -32,17 +32,19 @@ def display(a, i=None):
     print a[3]
 
 def info():
-    print "You have learned: ", len(bank), "word(s)"
+    print "> You have learned: ", len(bank), "word(s)"
 
 def get():
     try:
         row = raw_input("$ Enter the row number from bank: ")
         row = int(row)
-        if row < 0 or row>= len(bank):
+        if row < 1 or row> len(bank):
             print "> We cannot found ur record/ transaction"
             return
 
-        display(bank[row], row)
+        #display(bank[row-1], row)
+        display(bank[row-1])
+
     except KeyboardInterrupt as k:
         pass
     except EOFError as e:
@@ -67,7 +69,36 @@ def add():
         pass
 
 def modify():
-    pass
+    try:
+        row = raw_input("$ Enter the row you want: ")
+        row = int(row)
+        if row < 1 or row > len(bank):
+            print ("> Invalid row.")
+            return
+        print "$ 1: Original, 2: explanation, 3: translated (used to memorize the word), 4:description"
+        col = raw_input("$ Enter the column u want: ")
+        col = int(col)
+        if col < 1 or col > config.no_fields:
+            print "> Invalid col"
+            return
+        text = raw_input("$ Change to: ")
+        bank[row-1][col-1] = text.strip()
+
+    except KeyboardInterrupt as k:
+        pass
+    except EOFError as e:
+        pass
+
+def remove():
+    try:
+        row = raw_input("$ Enter the row u want to remove: ")
+        row = int(row)
+        del bank[row-1]
+
+    except KeyboardInterrupt as k:
+        pass
+    except EOFError as e:
+        pass
 
 def search():
     print "$ 1: Original, 2: explanation, 3: translated (used to memorize the word), 4:description"
@@ -83,9 +114,9 @@ def search():
         found = []
         for i in range(len(bank)):
             if  word in bank[i][col]:
-                found.append(i)
+                found.append(i+1)
 
-        print "> Found: ", found
+        print "> Found: ", [(str(f)+":"+bank[f-1][0]) for f in found]
 
     except KeyboardInterrupt as k:
         pass
@@ -97,11 +128,13 @@ def save():
     with open(config.bank_file, "w") as f:
         for cash in bank:
             f.write(config.separator.join(cash) + "\n")
+    print "> Saved successfully."
 
 def run():
     while True:
         try:
             command = raw_input("$ ")
+            command = command.strip()
             if command == "add":
                 add()
             elif "search" in command:
@@ -112,13 +145,18 @@ def run():
                 save()
             elif command == "get":
                 get()
-            elif command == "info":
+            elif command == "info" or command == "ls":
                 info()
+            elif command == "delete" or command == "remove":
+                remove()
             elif command == "exit":
                 sys.exit(0)
 
         except KeyboardInterrupt as k:
             break
+        except Exception as ex:
+            print "> There is an error happened."
+            print str(ex)
 
 def load():
     
