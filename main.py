@@ -6,11 +6,19 @@ bank_o_index = {} #original index, ie. column 1
 bank_t_index = {} #translated index, i.e, column 2
 bank_a_index = {} #alternative / explanation
 
-def deposit_to_bank(a,count = None):
+def get_index(col):
+    if col == 0: return bank_o_index
+    if col == 1: return bank_a_index
+    if col == 2: return bank_t_index
+    return {}
+
+def deposit_to_bank(a,count = None, new=False):
     
     if a[0] in bank_o_index:
+        print "> Already in bank. Item Number: ", bank_o_index[a[0]]
         count = bank_o_index[a[0]]
         bank[count] = a
+        print "> Updated temporarily to bank. Remember to save."
         return
     if count is None:
         count = len(bank)
@@ -19,6 +27,7 @@ def deposit_to_bank(a,count = None):
     bank_o_index[a[0]] = count
     bank_a_index[a[1]] = count
     bank_t_index[a[2]] = count
+    if new: print "> Deposited the word to bank. Item Number: ", count+1
 
 def display(a, i=None):
     if len(a) < config.no_fields:
@@ -29,7 +38,7 @@ def display(a, i=None):
         print "> Getting from row ", i, "(-th)"
     print ">", a[0], ":", a[1]
     print "> [", a[2], "]"
-    print a[3]
+    print ">", a[3]
 
 def info():
     print "> You have learned: ", len(bank), "word(s)"
@@ -61,7 +70,7 @@ def add():
         a.append(translated)
         example =      raw_input("$ Enter ur example        : ")
         a.append(example)
-        deposit_to_bank(a)
+        deposit_to_bank(a, new=True)
 
     except KeyboardInterrupt as k:
         pass
@@ -82,7 +91,48 @@ def modify():
             print "> Invalid col"
             return
         text = raw_input("$ Change to: ")
-        bank[row-1][col-1] = text.strip()
+        text= text.strip()
+        old_text = bank[row-1][col-1]
+        if len(text) > 0 and text[0] == "+":
+            bank[row-1][col-1] = bank[row-1][col-1] +","+ text[1:]
+        elif len(text) > 0 and text[-1] == "+": 
+            bank[row-1][col-1] = text[:-1] + ","+ bank[row-1][col-1]
+        else: bank[row-1][col-1] = text
+
+        d = bank_o_index
+        if col == 1: d = bank_a_index
+        elif col == 2: d = bank_t_index
+
+        if old_text in d:
+            del d[old_text]
+            d[bank[row-1][col-1]] = row - 1
+
+    except KeyboardInterrupt as k:
+        pass
+    except EOFError as e:
+        pass
+
+def swap():
+    try:
+        row = raw_input("$ Enter row: ")
+        row = int(row)
+        col1 = raw_input("$ Enter column 1: ")
+        col2 = raw_input("$ Enter column 2: ")
+        col1 = int(col1)
+        col2 = int(col2)
+        temp = bank[row - 1][col1-1]
+
+        col1_index = get_index(col1-1)
+        if bank[row - 1][col1-1] in col1_index:
+            del col1_index[bank[row - 1][col1-1]]
+        col2_index = get_index(col2-1)
+        if bank[row - 1][col2-1] in col2_index:
+            del col2_index[bank[row - 1][col2-1]]
+        bank[row - 1][col1-1] = bank[row-1][col2-1]
+        bank[row-1][col2-1] = temp
+
+        col1_index[bank[row - 1][col1-1]] = row-1
+        col2_index[bank[row - 1][col2-1]] = row-1
 
     except KeyboardInterrupt as k:
         pass
@@ -93,6 +143,10 @@ def remove():
     try:
         row = raw_input("$ Enter the row u want to remove: ")
         row = int(row)
+        if bank[row-1][0] in bank_o_index: del bank_o_index[bank[row-1][0]]
+        if bank[row-1][1] in bank_a_index: del bank_a_index[bank[row-1][1]]
+        if bank[row-1][2] in bank_t_index: del bank_t_index[bank[row-1][2]]
+
         del bank[row-1]
 
     except KeyboardInterrupt as k:
@@ -135,9 +189,10 @@ def run():
         try:
             command = raw_input("$ ")
             command = command.strip()
+            command = command.lower()
             if command == "add":
                 add()
-            elif "search" in command:
+            elif "search" in command or "find" in command:
                 search()
             elif command == "modify":
                 modify()
@@ -149,6 +204,8 @@ def run():
                 info()
             elif command == "delete" or command == "remove":
                 remove()
+            elif command == "swap":
+                swap()
             elif command == "exit":
                 sys.exit(0)
 
@@ -163,6 +220,7 @@ def load():
     with open(config.bank_file, "r") as f:
         count = 0
         for line in f:
+            line = line.strip()
             a = line.split(config.separator)
             if len(a) < config.no_fields:
                 continue
