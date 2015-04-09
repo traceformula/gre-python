@@ -154,7 +154,7 @@ def remove():
     except EOFError as e:
         pass
 
-def search():
+def search(findfirst=False):
     print "$ 1: Original, 2: explanation, 3: translated (used to memorize the word), 4:description"
     try:
         col = raw_input("$ Enter ur choice: ")
@@ -169,6 +169,9 @@ def search():
         for i in range(len(bank)):
             if  word in bank[i][col]:
                 found.append(i+1)
+                if findfirst == True:
+                    display(bank[i], i+1)
+                    return
 
         print "> Found: ", [(str(f)+":"+bank[f-1][0]) for f in found]
 
@@ -194,6 +197,8 @@ def run():
                 add()
             elif "search" in command or "find" in command:
                 search()
+            elif command == "first":
+                search(findfirst=True)
             elif command == "modify":
                 modify()
             elif command == "save":
